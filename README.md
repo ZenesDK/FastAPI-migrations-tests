@@ -24,3 +24,212 @@ alembic history
 
 # Проверка текущей версии
 alembic current
+
+Вот раздел для README.md по заданию 10.1:
+```
+
+## Задание 10.1 - Кастомная обработка ошибок
+
+### Реализовано:
+
+1. **Кастомные классы исключений:**
+   - `CustomExceptionA` (403 Forbidden)
+   - `CustomExceptionB` (404 Not Found)
+
+2. **Обработчики исключений** через `@app.exception_handler`
+
+3. **Модель ошибки Pydantic** `ErrorResponse` для единого формата ответа
+
+4. **Эндпоинты для тестирования:**
+   - `GET /forbidden` — вызывает `CustomExceptionA`
+   - `GET /not-found` — вызывает `CustomExceptionB`
+
+### Примеры ответов:
+
+**403 Forbidden:**
+```json
+{
+  "status_code": 403,
+  "error": "ForbiddenError",
+  "message": "Access denied: insufficient permissions"
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "status_code": 404,
+  "error": "NotFoundError",
+  "message": "The requested resource does not exist"
+}
+```
+
+### Тестирование:
+
+```bash
+# Ручная проверка
+curl http://localhost:8000/forbidden
+curl http://localhost:8000/not-found
+
+# Автотесты
+pytest tests/test_errors.py -v
+```
+
+### Результат тестов:
+```
+tests/test_errors.py::test_custom_exception_a PASSED ✅
+tests/test_errors.py::test_custom_exception_b PASSED ✅
+```
+
+## Задание 10.2 - Валидация данных и обработка ошибок валидации
+
+### Реализовано:
+
+1. **Модель Pydantic `UserData` с валидацией:**
+   - `username`: строка, обязательное поле
+   - `age`: целое число, **должно быть больше 18** (`gt=18`)
+   - `email`: валидный email (`EmailStr`)
+   - `password`: строка **от 8 до 16 символов** (`min_length=8, max_length=16`)
+   - `phone`: опциональное поле, по умолчанию `"Unknown"`
+
+2. **Эндпоинт `/register` (POST)** — принимает JSON с данными пользователя
+
+3. **Кастомный обработчик `RequestValidationError`** — возвращает структурированный ответ с:
+   - Полем `error`
+   - Сообщением `message`
+   - Детальным списком `details` (поле, причина ошибки, тип)
+   - Исходным телом запроса `body`
+
+### Примеры ответов:
+
+**Успешная регистрация (200 OK):**
+```json
+{
+  "message": "User john registered successfully",
+  "data": {
+    "username": "john",
+    "age": 25,
+    "email": "john@example.com",
+    "password": "securepass123",
+    "phone": "+1234567890"
+  }
+}
+```
+
+**Ошибка валидации (422 Unprocessable Entity):**
+```json
+{
+  "error": "Validation error",
+  "message": "Invalid input data",
+  "details": [
+    {
+      "field": "body -> age",
+      "message": "Input should be greater than 18",
+      "type": "greater_than"
+    }
+  ],
+  "body": {
+    "username": "john",
+    "age": 18,
+    "email": "john@example.com",
+    "password": "securepass123"
+  }
+}
+```
+
+### Тестирование:
+
+```bash
+# Ручная проверка
+curl -X POST http://localhost:8000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","age":25,"email":"john@example.com","password":"securepass123"}'
+
+# Автотесты
+PYTHONPATH=. pytest tests/test_validation.py -v
+```
+
+### Результат тестов:
+```
+tests/test_validation.py::test_register_user_success PASSED ✅
+tests/test_validation.py::test_register_user_age_too_young PASSED ✅
+tests/test_validation.py::test_register_user_invalid_email PASSED ✅
+tests/test_validation.py::test_register_user_password_too_short PASSED ✅
+tests/test_validation.py::test_register_user_password_too_long PASSED ✅
+tests/test_validation.py::test_register_user_missing_required_field PASSED ✅
+tests/test_validation.py::test_register_user_without_phone PASSED ✅
+```
+
+## Задание 11.1 - Модульные тесты для CRUD операций
+
+### Реализовано:
+
+1. **Три эндпоинта для работы с пользователями (in-memory хранилище):**
+   - `POST /users` — создание пользователя (201 Created)
+   - `GET /users/{id}` — получение пользователя по ID (200 OK)
+   - `DELETE /users/{id}` — удаление пользователя (204 No Content)
+
+2. **Модели Pydantic:**
+   - `UserIn` — входные данные (username, age)
+   - `UserOut` — выходные данные (id, username, age)
+
+3. **Модульные тесты с pytest и TestClient:**
+   - Успешное создание пользователя
+   - Создание с отсутствующим обязательным полем (422)
+   - Получение существующего пользователя
+   - Получение несуществующего пользователя (404)
+   - Успешное удаление пользователя
+   - Удаление несуществующего пользователя (404)
+   - Повторное удаление того же пользователя (404)
+
+4. **Фикстура `clean_db`** — обеспечивает изоляцию состояния между тестами
+
+### Примеры запросов:
+
+```bash
+# Создание пользователя
+curl -X POST http://localhost:8000/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john_doe","age":30}'
+
+# Получение пользователя
+curl http://localhost:8000/users/1
+
+# Удаление пользователя
+curl -X DELETE http://localhost:8000/users/1
+```
+
+### Тестирование:
+
+```bash
+# Запуск всех модульных тестов
+PYTHONPATH=. pytest tests/test_unit.py -v
+
+# Запуск конкретного теста
+PYTHONPATH=. pytest tests/test_unit.py::TestUsersAPI::test_create_user_success -v
+```
+
+### Результат тестов:
+
+```
+tests/test_unit.py::TestUsersAPI::test_create_user_success PASSED ✅
+tests/test_unit.py::TestUsersAPI::test_create_user_missing_field PASSED ✅
+tests/test_unit.py::TestUsersAPI::test_get_user_success PASSED ✅
+tests/test_unit.py::TestUsersAPI::test_get_user_not_found PASSED ✅
+tests/test_unit.py::TestUsersAPI::test_delete_user_success PASSED ✅
+tests/test_unit.py::TestUsersAPI::test_delete_user_not_found PASSED ✅
+tests/test_unit.py::TestUsersAPI::test_delete_twice PASSED ✅
+```
+
+### Покрытые сценарии:
+
+| Сценарий | Ожидаемый статус | Результат |
+|----------|-----------------|-----------|
+| Создание пользователя | 201 | ✅ |
+| Создание без обязательного поля | 422 | ✅ |
+| Получение существующего | 200 | ✅ |
+| Получение несуществующего | 404 | ✅ |
+| Удаление существующего | 204 | ✅ |
+| Удаление несуществующего | 404 | ✅ |
+| Повторное удаление | 404 | ✅ |
+
