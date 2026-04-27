@@ -233,3 +233,70 @@ tests/test_unit.py::TestUsersAPI::test_delete_twice PASSED ✅
 | Удаление несуществующего | 404 | ✅ |
 | Повторное удаление | 404 | ✅ |
 
+## Задание 11.2 - Асинхронные модульные тесты с Faker
+
+### Реализовано:
+
+1. **Асинхронные тесты** с использованием `pytest-asyncio`
+2. **HTTP-клиент без запуска сервера** — `httpx.AsyncClient` с `ASGITransport`
+3. **Генерация тестовых данных** через библиотеку **Faker**:
+   - Случайные имена пользователей (`fake.user_name()`)
+   - Случайный возраст (`fake.random_int(min=18, max=100)`)
+4. **Изоляция состояния** — фикстура `clean_db` очищает in-memory БД между тестами
+5. **Покрытые сценарии:**
+   - Успешное создание пользователя
+   - Получение существующего пользователя
+   - Получение несуществующего пользователя (404)
+   - Успешное удаление пользователя
+   - Удаление несуществующего пользователя (404)
+   - Повторное удаление того же пользователя (404)
+
+### Технологии:
+
+| Компонент | Назначение |
+|-----------|------------|
+| `pytest-asyncio` | Поддержка асинхронных тестов |
+| `httpx.AsyncClient` | Асинхронные HTTP-запросы |
+| `ASGITransport` | Напрямую вызывает приложение FastAPI |
+| `Faker` | Генерация реалистичных тестовых данных |
+
+### Тестирование:
+
+```bash
+# Запуск всех асинхронных тестов
+PYTHONPATH=. pytest tests/test_async.py -v
+
+# Запуск с подробным выводом
+PYTHONPATH=. pytest tests/test_async.py -v --tb=short
+```
+
+### Результат тестов:
+
+```
+tests/test_async.py::TestAsyncUsersAPI::test_create_user_async PASSED ✅
+tests/test_async.py::TestAsyncUsersAPI::test_get_user_success_async PASSED ✅
+tests/test_async.py::TestAsyncUsersAPI::test_get_user_not_found_async PASSED ✅
+tests/test_async.py::TestAsyncUsersAPI::test_delete_user_success_async PASSED ✅
+tests/test_async.py::TestAsyncUsersAPI::test_delete_user_not_found_async PASSED ✅
+tests/test_async.py::TestAsyncUsersAPI::test_delete_twice_async PASSED ✅
+```
+
+### Пример кода теста:
+
+```python
+async def test_create_user_async(self, async_client, clean_db):
+    username = fake.user_name()
+    age = fake.random_int(min=18, max=100)
+
+    response = await async_client.post("/users", 
+        json={"username": username, "age": age})
+    
+    assert response.status_code == 201
+    assert response.json()["username"] == username
+```
+
+### Особенности реализации:
+
+- **Фикстура `async_client`** — создаёт асинхронный клиент с `ASGITransport`, не требует запуска сервера
+- **Фикстура `clean_db`** — очищает хранилище перед каждым тестом для изоляции
+- **Декоратор `@pytest.mark.asyncio`** — указывает, что тест асинхронный
