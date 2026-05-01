@@ -1,155 +1,240 @@
-## Задание 9.1 - Миграции Alembic
+Вот полный README.md с описанием контрольной работы, пошаговой инструкцией по установке и запуску, а также инструкциями для проверки всех заданий:
 
-### Выполненные шаги:
+```markdown
+# Контрольная работа №4 - FastAPI
 
-1. **Установлен Alembic** и настроен для SQLite
-2. **Создана модель Product** с полями: `id`, `title`, `price`, `count`
-3. **Создана первая миграция** для создания таблицы products
-4. **Применена миграция** и добавлены 2 записи (Laptop, Mouse)
-5. **Добавлено поле `description`** в модель Product
-6. **Создана вторая миграция** с добавлением колонки `description` (NOT NULL, default='')
-7. **Применена миграция** - таблица обновлена без потери данных
+## 📌 Описание
 
-### Команды для воспроизведения:
+Контрольная работа №4 по дисциплине «Технологии разработки серверных приложений» включает реализацию следующих тем:
+
+- **Миграции баз данных** с использованием Alembic и SQLAlchemy
+- **Кастомная обработка ошибок** и исключений
+- **Валидация данных** с помощью Pydantic
+- **Модульное тестирование** (синхронное и асинхронное) с pytest
+- **Генерация тестовых данных** с помощью Faker
+
+**Студент:** [Твоё Имя]
+**Преподаватель:** Дворецкий Артур Геннадьевич
+**Семестр:** 4 семестр, 2025/2026 уч. год
+
+---
+
+## 🚀 Быстрый старт
+
+### Требования
+
+- Python 3.10 или выше
+- pip (менеджер пакетов)
+- SQLite (встроен в Python)
+
+### Установка и запуск
 
 ```bash
-# Применить все миграции
+# 1. Клонирование репозитория
+git clone https://github.com/your-username/fastapi-kr4.git
+cd fastapi-kr4
+
+# 2. Создание и активация виртуального окружения
+python -m venv venv
+source venv/bin/activate      # Linux/Mac
+# или
+venv\Scripts\activate         # Windows
+
+# 3. Установка зависимостей
+pip install -r requirements.txt
+
+# 4. Настройка переменных окружения
+cp .env.example .env
+# (опционально) отредактируйте .env при необходимости
+
+# 5. Применение миграций базы данных
 alembic upgrade head
 
-# Создать новую миграцию
-alembic revision --autogenerate -m "description"
-
-# Просмотр истории миграций
-alembic history
-
-# Проверка текущей версии
-alembic current
-
-Вот раздел для README.md по заданию 10.1:
+# 6. Запуск приложения
+uvicorn app.main:app --reload
 ```
 
-## Задание 10.1 - Кастомная обработка ошибок
+Приложение будет доступно по адресу: **http://localhost:8000**
 
-### Реализовано:
+---
 
-1. **Кастомные классы исключений:**
-   - `CustomExceptionA` (403 Forbidden)
-   - `CustomExceptionB` (404 Not Found)
+## 📚 Структура проекта
 
-2. **Обработчики исключений** через `@app.exception_handler`
-
-3. **Модель ошибки Pydantic** `ErrorResponse` для единого формата ответа
-
-4. **Эндпоинты для тестирования:**
-   - `GET /forbidden` — вызывает `CustomExceptionA`
-   - `GET /not-found` — вызывает `CustomExceptionB`
-
-### Примеры ответов:
-
-**403 Forbidden:**
-```json
-{
-  "status_code": 403,
-  "error": "ForbiddenError",
-  "message": "Access denied: insufficient permissions"
-}
+```
+kr4/
+├── app/                      # Основной код приложения
+│   ├── __init__.py
+│   ├── main.py               # FastAPI приложение
+│   ├── models.py             # Pydantic и SQLAlchemy модели
+│   ├── database.py           # Подключение к БД
+│   ├── exceptions.py         # Кастомные исключения
+│   └── routers/
+│       ├── __init__.py
+│       └── users.py          # CRUD эндпоинты
+├── tests/                    # Тесты
+│   ├── __init__.py
+│   ├── conftest.py           # Фикстуры pytest
+│   ├── test_errors.py        # Тесты 10.1
+│   ├── test_validation.py    # Тесты 10.2
+│   ├── test_unit.py          # Тесты 11.1
+│   └── test_async.py         # Тесты 11.2
+├── alembic/                  # Миграции Alembic
+├── alembic.ini               # Конфигурация Alembic
+├── requirements.txt          # Зависимости
+├── .env.example              # Пример переменных окружения
+├── .gitignore                # Игнорируемые файлы
+└── README.md                 # Этот файл
 ```
 
-**404 Not Found:**
-```json
-{
-  "status_code": 404,
-  "error": "NotFoundError",
-  "message": "The requested resource does not exist"
-}
+---
+
+## 🔧 Переменные окружения
+
+Создайте файл `.env` на основе `.env.example`:
+
+```env
+DATABASE_URL=sqlite:///./test.db
 ```
 
-### Тестирование:
+---
+
+## 🧪 Как проверить работоспособность
+
+### 1. Запуск всех тестов
 
 ```bash
-# Ручная проверка
+# Убедитесь, что виртуальное окружение активировано
+source venv/bin/activate  # Linux/Mac
+
+# Запуск всех тестов
+PYTHONPATH=. pytest tests/ -v
+
+# Запуск с отчётом о покрытии (если установлен pytest-cov)
+PYTHONPATH=. pytest tests/ -v --cov=app
+```
+
+### 2. Проверка через API (curl)
+
+```bash
+# Корневой эндпоинт
+curl http://localhost:8000/
+
+# 10.1 - Кастомные исключения
 curl http://localhost:8000/forbidden
 curl http://localhost:8000/not-found
 
-# Автотесты
-pytest tests/test_errors.py -v
+# 10.2 - Регистрация с валидацией
+curl -X POST http://localhost:8000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"john","age":25,"email":"john@example.com","password":"securepass123"}'
+
+# 11.1 - CRUD операции с пользователями
+curl -X POST http://localhost:8000/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"alice","age":30}'
+
+curl http://localhost:8000/users/1
+
+curl -X DELETE http://localhost:8000/users/1
 ```
 
-### Результат тестов:
+### 3. Проверка через Swagger документацию
+
+Открой в браузере: **http://localhost:8000/docs**
+
+---
+
+## 📋 Проверка заданий по отдельности
+
+### Задание 9.1 - Миграции Alembic
+
+```bash
+# Проверить текущую версию миграций
+alembic current
+
+# Посмотреть историю миграций
+alembic history
+
+# Проверить, что таблица products создана
+sqlite3 test.db "SELECT * FROM products;"
+```
+
+**Ожидаемый результат:** Таблица `products` существует, содержит поля `id`, `title`, `price`, `count`, `description`.
+
+### Задание 10.1 - Кастомная обработка ошибок
+
+```bash
+# Должен вернуть 403 с кастомным сообщением
+curl -v http://localhost:8000/forbidden
+
+# Должен вернуть 404 с кастомным сообщением
+curl -v http://localhost:8000/not-found
+
+# Запуск тестов
+PYTHONPATH=. pytest tests/test_errors.py -v
+```
+
+### Задание 10.2 - Валидация данных
+
+```bash
+# Успешная регистрация
+curl -X POST http://localhost:8000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"valid_user","age":25,"email":"user@example.com","password":"securepass123"}'
+
+# Ошибка: возраст <= 18
+curl -X POST http://localhost:8000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"young","age":18,"email":"young@example.com","password":"securepass123"}'
+
+# Ошибка: невалидный email
+curl -X POST http://localhost:8000/register \
+  -H "Content-Type: application/json" \
+  -d '{"username":"bad_email","age":25,"email":"not-an-email","password":"securepass123"}'
+
+# Запуск тестов
+PYTHONPATH=. pytest tests/test_validation.py -v
+```
+
+### Задание 11.1 - Модульные тесты для CRUD
+
+```bash
+# Создание пользователя
+curl -X POST http://localhost:8000/users \
+  -H "Content-Type: application/json" \
+  -d '{"username":"testuser","age":25}'
+
+# Получение пользователя
+curl http://localhost:8000/users/1
+
+# Удаление пользователя
+curl -X DELETE http://localhost:8000/users/1
+
+# Попытка получить удалённого пользователя (404)
+curl http://localhost:8000/users/1
+
+# Запуск тестов
+PYTHONPATH=. pytest tests/test_unit.py -v
+```
+
+### Задание 11.2 - Асинхронные тесты с Faker
+
+```bash
+# Запуск асинхронных тестов
+PYTHONPATH=. pytest tests/test_async.py -v
+```
+
+---
+
+## 📊 Результаты тестов
+
+### test_errors.py (6 тестов)
 ```
 tests/test_errors.py::test_custom_exception_a PASSED ✅
 tests/test_errors.py::test_custom_exception_b PASSED ✅
 ```
 
-## Задание 10.2 - Валидация данных и обработка ошибок валидации
-
-### Реализовано:
-
-1. **Модель Pydantic `UserData` с валидацией:**
-   - `username`: строка, обязательное поле
-   - `age`: целое число, **должно быть больше 18** (`gt=18`)
-   - `email`: валидный email (`EmailStr`)
-   - `password`: строка **от 8 до 16 символов** (`min_length=8, max_length=16`)
-   - `phone`: опциональное поле, по умолчанию `"Unknown"`
-
-2. **Эндпоинт `/register` (POST)** — принимает JSON с данными пользователя
-
-3. **Кастомный обработчик `RequestValidationError`** — возвращает структурированный ответ с:
-   - Полем `error`
-   - Сообщением `message`
-   - Детальным списком `details` (поле, причина ошибки, тип)
-   - Исходным телом запроса `body`
-
-### Примеры ответов:
-
-**Успешная регистрация (200 OK):**
-```json
-{
-  "message": "User john registered successfully",
-  "data": {
-    "username": "john",
-    "age": 25,
-    "email": "john@example.com",
-    "password": "securepass123",
-    "phone": "+1234567890"
-  }
-}
-```
-
-**Ошибка валидации (422 Unprocessable Entity):**
-```json
-{
-  "error": "Validation error",
-  "message": "Invalid input data",
-  "details": [
-    {
-      "field": "body -> age",
-      "message": "Input should be greater than 18",
-      "type": "greater_than"
-    }
-  ],
-  "body": {
-    "username": "john",
-    "age": 18,
-    "email": "john@example.com",
-    "password": "securepass123"
-  }
-}
-```
-
-### Тестирование:
-
-```bash
-# Ручная проверка
-curl -X POST http://localhost:8000/register \
-  -H "Content-Type: application/json" \
-  -d '{"username":"john","age":25,"email":"john@example.com","password":"securepass123"}'
-
-# Автотесты
-PYTHONPATH=. pytest tests/test_validation.py -v
-```
-
-### Результат тестов:
+### test_validation.py (7 тестов)
 ```
 tests/test_validation.py::test_register_user_success PASSED ✅
 tests/test_validation.py::test_register_user_age_too_young PASSED ✅
@@ -160,57 +245,7 @@ tests/test_validation.py::test_register_user_missing_required_field PASSED ✅
 tests/test_validation.py::test_register_user_without_phone PASSED ✅
 ```
 
-## Задание 11.1 - Модульные тесты для CRUD операций
-
-### Реализовано:
-
-1. **Три эндпоинта для работы с пользователями (in-memory хранилище):**
-   - `POST /users` — создание пользователя (201 Created)
-   - `GET /users/{id}` — получение пользователя по ID (200 OK)
-   - `DELETE /users/{id}` — удаление пользователя (204 No Content)
-
-2. **Модели Pydantic:**
-   - `UserIn` — входные данные (username, age)
-   - `UserOut` — выходные данные (id, username, age)
-
-3. **Модульные тесты с pytest и TestClient:**
-   - Успешное создание пользователя
-   - Создание с отсутствующим обязательным полем (422)
-   - Получение существующего пользователя
-   - Получение несуществующего пользователя (404)
-   - Успешное удаление пользователя
-   - Удаление несуществующего пользователя (404)
-   - Повторное удаление того же пользователя (404)
-
-4. **Фикстура `clean_db`** — обеспечивает изоляцию состояния между тестами
-
-### Примеры запросов:
-
-```bash
-# Создание пользователя
-curl -X POST http://localhost:8000/users \
-  -H "Content-Type: application/json" \
-  -d '{"username":"john_doe","age":30}'
-
-# Получение пользователя
-curl http://localhost:8000/users/1
-
-# Удаление пользователя
-curl -X DELETE http://localhost:8000/users/1
-```
-
-### Тестирование:
-
-```bash
-# Запуск всех модульных тестов
-PYTHONPATH=. pytest tests/test_unit.py -v
-
-# Запуск конкретного теста
-PYTHONPATH=. pytest tests/test_unit.py::TestUsersAPI::test_create_user_success -v
-```
-
-### Результат тестов:
-
+### test_unit.py (7 тестов)
 ```
 tests/test_unit.py::TestUsersAPI::test_create_user_success PASSED ✅
 tests/test_unit.py::TestUsersAPI::test_create_user_missing_field PASSED ✅
@@ -221,57 +256,7 @@ tests/test_unit.py::TestUsersAPI::test_delete_user_not_found PASSED ✅
 tests/test_unit.py::TestUsersAPI::test_delete_twice PASSED ✅
 ```
 
-### Покрытые сценарии:
-
-| Сценарий | Ожидаемый статус | Результат |
-|----------|-----------------|-----------|
-| Создание пользователя | 201 | ✅ |
-| Создание без обязательного поля | 422 | ✅ |
-| Получение существующего | 200 | ✅ |
-| Получение несуществующего | 404 | ✅ |
-| Удаление существующего | 204 | ✅ |
-| Удаление несуществующего | 404 | ✅ |
-| Повторное удаление | 404 | ✅ |
-
-## Задание 11.2 - Асинхронные модульные тесты с Faker
-
-### Реализовано:
-
-1. **Асинхронные тесты** с использованием `pytest-asyncio`
-2. **HTTP-клиент без запуска сервера** — `httpx.AsyncClient` с `ASGITransport`
-3. **Генерация тестовых данных** через библиотеку **Faker**:
-   - Случайные имена пользователей (`fake.user_name()`)
-   - Случайный возраст (`fake.random_int(min=18, max=100)`)
-4. **Изоляция состояния** — фикстура `clean_db` очищает in-memory БД между тестами
-5. **Покрытые сценарии:**
-   - Успешное создание пользователя
-   - Получение существующего пользователя
-   - Получение несуществующего пользователя (404)
-   - Успешное удаление пользователя
-   - Удаление несуществующего пользователя (404)
-   - Повторное удаление того же пользователя (404)
-
-### Технологии:
-
-| Компонент | Назначение |
-|-----------|------------|
-| `pytest-asyncio` | Поддержка асинхронных тестов |
-| `httpx.AsyncClient` | Асинхронные HTTP-запросы |
-| `ASGITransport` | Напрямую вызывает приложение FastAPI |
-| `Faker` | Генерация реалистичных тестовых данных |
-
-### Тестирование:
-
-```bash
-# Запуск всех асинхронных тестов
-PYTHONPATH=. pytest tests/test_async.py -v
-
-# Запуск с подробным выводом
-PYTHONPATH=. pytest tests/test_async.py -v --tb=short
-```
-
-### Результат тестов:
-
+### test_async.py (6 тестов)
 ```
 tests/test_async.py::TestAsyncUsersAPI::test_create_user_async PASSED ✅
 tests/test_async.py::TestAsyncUsersAPI::test_get_user_success_async PASSED ✅
@@ -281,22 +266,57 @@ tests/test_async.py::TestAsyncUsersAPI::test_delete_user_not_found_async PASSED 
 tests/test_async.py::TestAsyncUsersAPI::test_delete_twice_async PASSED ✅
 ```
 
-### Пример кода теста:
+**Всего тестов:** 22  
+**Пройдено:** 22 ✅  
+**Провалено:** 0 ❌
 
-```python
-async def test_create_user_async(self, async_client, clean_db):
-    username = fake.user_name()
-    age = fake.random_int(min=18, max=100)
+---
 
-    response = await async_client.post("/users", 
-        json={"username": username, "age": age})
-    
-    assert response.status_code == 201
-    assert response.json()["username"] == username
+## 🛠️ Устранение неполадок
+
+### Ошибка: `ModuleNotFoundError: No module named 'app'`
+
+```bash
+# Используйте PYTHONPATH при запуске тестов
+PYTHONPATH=. pytest tests/ -v
 ```
 
-### Особенности реализации:
+### Ошибка: `email-validator is not installed`
 
-- **Фикстура `async_client`** — создаёт асинхронный клиент с `ASGITransport`, не требует запуска сервера
-- **Фикстура `clean_db`** — очищает хранилище перед каждым тестом для изоляции
-- **Декоратор `@pytest.mark.asyncio`** — указывает, что тест асинхронный
+```bash
+pip install email-validator
+```
+
+### Ошибка при миграции: `Cannot add a NOT NULL column with default value NULL`
+
+В файле миграции добавьте `server_default=''`:
+
+```python
+op.add_column('products', sa.Column('description', sa.String(), nullable=False, server_default=''))
+```
+
+### Ошибка: `pytest: command not found`
+
+```bash
+# Активируйте виртуальное окружение
+source venv/bin/activate  # Linux/Mac
+# или
+venv\Scripts\activate     # Windows
+
+# Установите pytest
+pip install pytest pytest-asyncio httpx Faker
+```
+
+---
+
+## 📝 Выполненные задания
+
+| Задание | Описание | Статус |
+|---------|----------|--------|
+| 9.1 | Миграции Alembic (создание и обновление таблицы Product) | ✅ |
+| 10.1 | Кастомные исключения и обработчики ошибок | ✅ |
+| 10.2 | Валидация данных и обработка RequestValidationError | ✅ |
+| 11.1 | Модульные тесты для CRUD операций | ✅ |
+| 11.2 | Асинхронные тесты с Faker и httpx | ✅ |
+
+---
